@@ -46,4 +46,17 @@ It is highly recommended to run ForensiX AI inside an isolated virtual environme
 **1. Clone the repository:**
 ```bash
 git clone [https://github.com/Jatin-pardeshi/ForensiX_AI.git](https://github.com/Jatin-pardeshi/ForensiX_AI.git)
+
 cd ForensiX_AI
+
+# On Windows:
+python -m venv venv
+venv\Scripts\activate
+
+# On Mac/Linux:
+python3 -m venv venv
+source venv/bin/activate
+
+pip install -r requirements.txt
+
+python app.py
