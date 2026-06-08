@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  forensix_soc_node:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=sqlite:///forensix_core.db
+      - SECRET_KEY=7ca9e2f6bc4e1b8273641a9a8d3eef543b39d1b02130e9e1
+      - JWT_SECRET_KEY=0a831e5fcdb2c938d94e1c20847f9eab23d0e2c8139aa920
+    volumes:
+      - forensix_data:/app/storage
+
+volumes:
+  forensix_data:
