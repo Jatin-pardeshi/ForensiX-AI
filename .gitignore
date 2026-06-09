@@ -1,0 +1,16 @@
+# Python virtual environments
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Databases
+*.db
+*.sqlite3
+
+# Uploads & Evidence
+storage/evidence/*
+!storage/evidence/.keep
+
+# Secrets
+.env
