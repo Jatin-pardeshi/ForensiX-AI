@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForensiX AI // Evidence Ledger</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body { background-color: #0b0f19; color: #cdd6f4; font-family: 'Courier New', monospace; }
+        .soc-card { background-color: #111827; border: 1px solid #1f2937; border-left: 4px solid #3b82f6; }
+        .table-soc { color: #cdd6f4; border-color: #374151; }
+        .table-soc thead { background-color: #030712; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; }
+        .text-alert { color: #ef4444; font-weight: bold; }
+        .text-secure { color: #10b981; font-weight: bold; }
+        .modal-content { background-color: #111827; border: 1px solid #3b82f6; }
+        .modal-header { border-bottom: 1px solid #374151; }
+        .modal-footer { border-top: 1px solid #374151; }
+        .terminal-box { background-color: #030712; padding: 10px; font-size: 0.8rem; color: #10b981; border: 1px solid #374151; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark border-bottom border-secondary px-4">
+        <span class="navbar-brand mb-0 h1 text-white fw-bold">👁️ FORENSIX AI // EVIDENCE LEDGER</span>
+        <div>
+            <a href="/" class="btn btn-outline-secondary btn-sm me-2">BACK TO DASHBOARD</a>
+            <span class="badge bg-danger">CLASSIFICATION: HIGHLY CONFIDENTIAL</span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="card soc-card p-4">
+            <h5 class="mb-3 text-primary">Master Case Ledger & Cryptographic Verification</h5>
+            
+            <div class="table-responsive">
+                <table class="table table-hover table-soc align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Case Ref</th>
+                            <th>Target File</th>
+                            <th>Media Type</th>
+                            <th>Authenticity Index</th>
+                            <th>AI Synthesis Risk</th>
+                            <th>Analysis Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in evidence_items %}
+                        <tr>
+                            <td>#{{ item.id }}</td>
+                            <td>CASE-{{ item.case_id }}</td>
+                            <td>{{ item.filename }}</td>
+                            <td><span class="badge bg-secondary">{{ item.file_type }}</span></td>
+                            
+                            <td class="text-secure">{{ (item.authenticity_score * 100) | round(2) }}%</td>
+                            
+                            <td class="{% if item.ai_probability > 0.5 %}text-alert{% endif %}">
+                                {{ (item.ai_probability * 100) | round(2) }}%
+                            </td>
+                            
+                            <td>{{ item.analyzed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modal-{{ item.id }}">
+                                    INSPECT REPORT
+                                </button>
+                            </td>
+                        </tr>
+
+                        <div class="modal fade" id="modal-{{ item.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-xl">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title text-white">Forensic Report: {{ item.filename }}</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body row g-3">
+                                        
+                                        <div class="col-md-6 text-center">
+                                            <h6 class="text-secondary">Original Source Container</h6>
+                                            
+                                            {% if item.file_type == 'Image' %}
+                                                <img src="/evidence/{{ item.filename }}" class="img-fluid border border-secondary mb-3" style="max-height: 300px;">
+                                                <h6 class="text-secondary">Error Level Analysis (ELA) Heatmap</h6>
+                                                
+                                                {% if item.forensic_metadata.ela and item.forensic_metadata.ela.heatmap_filename %}
+                                                    <img src="/evidence/{{ item.forensic_metadata.ela.heatmap_filename }}" class="img-fluid border border-danger" style="max-height: 300px;">
+                                                {% else %}
+                                                    <div class="text-warning border border-warning p-2 small mb-3">⚠️ ELA Heatmap unavailable for this record.</div>
+                                                {% endif %}
+                                            
+                                            {% elif item.file_type == 'Video' %}
+                                                <div class="terminal-box text-start mb-3">
+                                                    > Extracted {{ item.forensic_metadata.container_metadata.total_frames }} frames.<br>
+                                                    > Timeline duration: {{ item.forensic_metadata.container_metadata.duration_seconds }}s.<br>
+                                                    > {{ item.forensic_metadata.flagged_keyframes | length }} anomalies flagged.
+                                                </div>
+                                                <h6 class="text-secondary">Suspicious Keyframe Extractions</h6>
+                                                {% for keyframe in item.forensic_metadata.flagged_keyframes %}
+                                                    <img src="/evidence/{{ keyframe }}" class="img-fluid border border-warning mb-2" style="max-height: 150px; display: inline-block;">
+                                                {% endfor %}
+                                            
+                                            {% elif item.file_type == 'Audio' %}
+                                                <div class="terminal-box text-start mb-3">
+                                                    > Audio Duration: {{ item.forensic_metadata.duration_seconds }}s<br>
+                                                    > Sample Rate: {{ item.forensic_metadata.sample_rate }} Hz<br>
+                                                    > Primary Acoustic Sig: {{ item.forensic_metadata.acoustic_signature }}
+                                                </div>
+                                                <h6 class="text-secondary">Acoustic Mel-Spectrogram</h6>
+                                                
+                                                {% if item.forensic_metadata.spectrogram_filename %}
+                                                    <img src="/evidence/{{ item.forensic_metadata.spectrogram_filename }}" class="img-fluid border border-primary mb-3">
+                                                {% else %}
+                                                    <div class="text-warning border border-warning p-2 small mb-3">⚠️ Spectrogram unavailable for this record.</div>
+                                                {% endif %}
+                                                
+                                                <h6 class="text-secondary">Source Audio Playback</h6>
+                                                <audio controls class="w-100 border border-secondary rounded bg-dark">
+                                                    <source src="/evidence/{{ item.filename }}" type="audio/mpeg">
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <h6 class="text-secondary">Cryptographic Hash Signatures</h6>
+                                            <div class="terminal-box mb-3 text-white">
+                                                MD5: {{ item.md5_hash }}<br>
+                                                SHA256: {{ item.sha256_hash }}
+                                            </div>
+
+                                            <h6 class="text-secondary">AI Neural Telemetry Matrix</h6>
+                                            <ul class="list-group list-group-flush mb-3 rounded border border-secondary">
+                                                <li class="list-group-item bg-dark text-white d-flex justify-content-between">
+                                                    <span>Vision Transformer Model</span>
+                                                    <span class="text-alert">{{ (item.ai_probability * 100) | round(2) }}% Synthetic</span>
+                                                </li>
+                                                <li class="list-group-item bg-dark text-white d-flex justify-content-between">
+                                                    <span>Base Authenticity Matrix</span>
+                                                    <span class="text-secure">{{ (item.authenticity_score * 100) | round(2) }}% Human</span>
+                                                </li>
+                                            </ul>
+
+                                            <h6 class="text-secondary mt-3">Global Threat Intelligence</h6>
+                                            <ul class="list-group list-group-flush mb-3 rounded border border-secondary">
+                                                <li class="list-group-item bg-dark text-white d-flex justify-content-between">
+                                                    <span>VirusTotal Reputation</span>
+                                                    
+                                                    {% if item.forensic_metadata.threat_intel and item.forensic_metadata.threat_intel.status == 'success' %}
+                                                        {% if item.forensic_metadata.threat_intel.malicious_votes > 0 %}
+                                                            <span class="text-alert fw-bold">⚠️ {{ item.forensic_metadata.threat_intel.malicious_votes }} Engines Flagged</span>
+                                                        {% else %}
+                                                            <span class="text-secure fw-bold">✔️ Clean (0 Detections)</span>
+                                                        {% endif %}
+                                                    {% elif item.forensic_metadata.threat_intel and item.forensic_metadata.threat_intel.status == 'not_found' %}
+                                                        <span class="text-secondary">Unseen File (No Record)</span>
+                                                    {% else %}
+                                                        <span class="text-warning">API Offline / Unconfigured</span>
+                                                    {% endif %}
+                                                    
+                                                </li>
+                                            </ul>
+
+                                            <h6 class="text-secondary">Raw JSON Metadata Extraction</h6>
+                                            <div class="terminal-box text-warning" style="white-space: pre-wrap; font-size: 0.7rem;">{{ item.forensic_metadata | tojson(indent=2) }}</div>
+                                        </div>
+
+                                    </div>
+                                    
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary font-weight-bold" data-bs-dismiss="modal">CLOSE FILE</button>
+                                        <a href="/export/pdf/{{ item.id }}" class="btn btn-danger fw-bold">DOWNLOAD OFFICIAL PDF</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

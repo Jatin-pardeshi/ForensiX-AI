@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForensiX AI // Defensive Operations Center</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0b0f19; color: #cdd6f4; font-family: 'Courier New', monospace; }
+        .soc-card { background-color: #111827; border: 1px solid #1f2937; border-left: 4px solid #3b82f6; }
+        .telemetry-header { color: #3b82f6; text-transform: uppercase; letter-spacing: 2px; }
+        .text-alert { color: #ef4444; }
+        .text-secure { color: #10b981; }
+        .terminal-readout { background-color: #030712; padding: 15px; border-radius: 4px; border: 1px solid #374151; font-size: 0.85rem; color: #10b981; }
+    </style>
+</head>
+<body>
+   <nav class="navbar navbar-dark bg-dark border-bottom border-secondary px-4">
+        <span class="navbar-brand mb-0 h1 text-white fw-bold">👁️ FORENSIX AI // SYSTEM FORENSIC ANALYZER</span>
+        <div>
+            <a href="/ledger" class="btn btn-outline-primary btn-sm me-3 fw-bold">ACCESS EVIDENCE LEDGER</a>
+            <span class="badge bg-danger">CLASSIFICATION: HIGHLY CONFIDENTIAL</span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card soc-card p-4">
+                    <h5 class="telemetry-header mb-3">Target Ingestion Engine</h5>
+                    <form action="/api/v1/forensics/upload" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-bold">CASE REFS CODE</label>
+                            <input type="text" name="case_id" class="form-control bg-dark text-white border-secondary" value="1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-bold">EVIDENCE DATA STRINGS</label>
+                            <input type="file" name="file" class="form-control bg-dark text-white border-secondary" multiple required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">ENGAGE DEEP ANALYSIS PIPELINE</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card soc-card p-4 mb-3">
+                    <h5 class="telemetry-header mb-2">Live Analytical Telemetry Stream</h5>
+                    <div class="row text-center my-3">
+                        <div class="col-4">
+                            <small class="text-secondary d-block">AUTHENTICITY METRIC</small>
+                            <span class="fs-3 fw-bold text-secure">92.0%</span>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-secondary d-block">AI SYNTHESIS RISK</small>
+                            <span class="fs-3 fw-bold text-alert">8.0%</span>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-secondary d-block">SHANNON ENTROPY PROFILE</small>
+                            <span class="fs-3 fw-bold text-white">7.942 bits</span>
+                        </div>
+                    </div>
+                    <h6 class="text-secondary fw-bold mt-2">Active Framework Logs</h6>
+                    <div class="terminal-readout">
+                        [SYS_INIT] Initializing pipeline execution loops across Core Vision Arrays...<br>
+                        [CRYPTO] Target file verification hash generated: SHA256 matches validation parameters.<br>
+                        [MODEL_VIT] Executing spatial multi-head self-attention artifact search loops... Clean.<br>
+                        [COMPRESSION] Error Level Analysis (ELA) completed. No anomalous save deltas found.
+                    </div>
+                </div>
+            </div>
+        </div>
+   
+    </div>
+    <script>
+document.querySelector('form').addEventListener('submit', async (e) => {
+    e.preventDefault(); 
+    
+    const formData = new FormData(e.target);
+    const logBox = document.querySelector('.terminal-readout');
+    const filesUploaded = formData.getAll('file');
+    
+    logBox.innerHTML += `<br><br><span class="text-warning">[INGESTION] Initiating batch processing queue for ${filesUploaded.length} files...</span>`;
+    
+    try {
+        const response = await fetch('/api/v1/forensics/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if(data.status === 'batch_complete') {
+            logBox.innerHTML += `<br><span class="text-primary">[SYSTEM] Batch execution finished. Extracted telemetry mapping:</span>`;
+            
+            let totalAuthenticity = 0;
+            let totalRisk = 0;
+            let successCount = 0;
+
+            // Loop through the results array from the backend
+            data.results.forEach(result => {
+                if(result.status === 'success') {
+                    successCount++;
+                    totalAuthenticity += result.authenticity_score;
+                    totalRisk += result.ai_probability;
+                    
+                    let riskColor = result.ai_probability > 0.5 ? 'text-alert' : 'text-secure';
+                    logBox.innerHTML += `<br><span class="text-white">> ${result.filename} (${result.file_type}):</span> <span class="${riskColor}">Risk: ${(result.ai_probability * 100).toFixed(1)}%</span> | <span class="text-secondary">ID: #${result.evidence_id}</span>`;
+                } else {
+                    logBox.innerHTML += `<br><span class="text-alert">> ${result.filename}: FAILED (${result.message})</span>`;
+                }
+            });
+
+            // Update the main dashboard gauges with the AVERAGE score of the batch
+            if(successCount > 0) {
+                let avgAuth = (totalAuthenticity / successCount) * 100;
+                let avgRisk = (totalRisk / successCount) * 100;
+                
+                document.querySelector('.fs-3.text-secure').innerText = `${avgAuth.toFixed(2)}%`;
+                document.querySelector('.fs-3.text-alert').innerText = `${avgRisk.toFixed(2)}%`;
+            }
+
+            logBox.innerHTML += `<br><span class="text-primary">[SYSTEM] Queue cleared. Awaiting next payload.</span>`;
+            
+        } else {
+            logBox.innerHTML += `<br><span class="text-alert">[ERROR] Master pipeline rejected processing.</span>`;
+        }
+    } catch (error) {
+        logBox.innerHTML += `<br><span class="text-alert">[FATAL] Gateway connection severed: ${error}</span>`;
+    }
+});
+</script>
+</body>
+</html>
